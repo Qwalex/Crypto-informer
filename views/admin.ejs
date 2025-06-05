@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки Криптовалютного Бота</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 40px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        .button.secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        .button.success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+
+        .button.danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .pairs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .pair-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pair-checkbox:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+
+        .pair-checkbox.selected {
+            border-color: #27ae60;
+            background: #d5f4e6;
+        }
+
+        .pair-checkbox input {
+            margin-right: 8px;
+            width: auto;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert.success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        .alert.error {
+            background: #fdf2f2;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .alert.warning {
+            background: #fff5d7;
+            color: #f39c12;
+            border: 1px solid #f39c12;
+        }
+
+        .alert.info {
+            background: #e8f4f8;
+            color: #3498db;
+            border: 1px solid #3498db;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .instructions a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .instructions a:hover {
+            text-decoration: underline;
+        }
+
+        .chat-id-finder {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #3498db;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.green {
+            background: #27ae60;
+        }
+
+        .status-indicator.red {
+            background: #e74c3c;
+        }
+
+        .status-indicator.yellow {
+            background: #f39c12;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .tab-content {
+                padding: 20px;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .pairs-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Криптовалютный Бот</h1>
+            <p>Панель управления настройками</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('telegram')">📱 Telegram</button>
+            <button class="nav-tab" onclick="showTab('exchange')">🏦 Биржа</button>
+            <button class="nav-tab" onclick="showTab('analysis')">📊 Анализ</button>
+            <button class="nav-tab" onclick="showTab('status')">⚙️ Статус</button>
+        </div>
+
+        <form id="configForm">
+            <!-- Telegram Tab -->
+            <div id="telegram" class="tab-content active">
+                <div class="instructions">
+                    <h3>📱 Настройка Telegram бота</h3>
+                    <ol>
+                        <li>Перейдите в Telegram к <a href="https://t.me/BotFather" target="_blank">@BotFather</a></li>
+                        <li>Отправьте команду <code>/newbot</code></li>
+                        <li>Следуйте инструкциям и получите Bot Token</li>
+                        <li>Вставьте токен в поле ниже и нажмите "Проверить токен"</li>
+                        <li>После проверки токена отправьте любое сообщение вашему боту</li>
+                        <li>Нажмите "Найти Chat ID" для автоматического определения</li>
+                    </ol>
+                </div>
+
+                <div class="form-group">
+                    <label for="telegramBotToken">Bot Token *</label>
+                    <input type="text" id="telegramBotToken" name="telegramBotToken" 
+                           placeholder="123456789:ABCdefGHijklmnopQRSTuvwxyz" required>
+                    <small>Токен получен от @BotFather</small>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <button type="button" class="button" onclick="validateToken()">
+                        <span id="tokenValidationLoading" class="loading" style="display: none;"></span>
+                        Проверить токен
+                    </button>
+                    <div id="tokenValidationResult"></div>
+                </div>
+
+                <div class="chat-id-finder">
+                    <h3>🔍 Поиск Chat ID</h3>
+                    <p>Сначала отправьте любое сообщение вашему боту в Telegram, затем нажмите кнопку ниже:</p>
+                    <br>
+                    <button type="button" class="button success" onclick="findChatId()">
+                        <span id="chatIdLoading" class="loading" style="display: none;"></span>
+                        Найти Chat ID
+                    </button>
+                    <div id="chatIdResult" style="margin-top: 15px;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="telegramChatId">Chat ID *</label>
+                    <input type="text" id="telegramChatId" name="telegramChatId" 
+                           placeholder="123456789" required>
+                    <small>ID чата для отправки уведомлений</small>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button type="button" class="button success" onclick="sendTestMessage()">
+                        <span id="testMessageLoading" class="loading" style="display: none;"></span>
+                        Отправить тестовое сообщение
+                    </button>
+                    <div id="testMessageResult"></div>
+                </div>
+            </div>
+
+            <!-- Exchange Tab -->
+            <div id="exchange" class="tab-content">
+                <div class="instructions">
+                    <h3>🏦 Настройка биржи Bybit (опционально)</h3>
+                    <ol>
+                        <li>Зарегистрируйтесь на <a href="https://www.bybit.com" target="_blank">Bybit.com</a></li>
+                        <li>Перейдите в API Management</li>
+                        <li>Создайте новый API ключ</li>
+                        <li>Выберите разрешения: "Read-Only" (только чтение)</li>
+                        <li>Скопируйте API Key и Secret Key</li>
+                    </ol>
+                    <div class="alert info">
+                        <strong>Внимание:</strong> API ключи нужны только для получения расширенной информации. 
+                        Бот может работать и без них, используя публичные данные.
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="bybitApiKey">Bybit API Key (опционально)</label>
+                    <input type="text" id="bybitApiKey" name="bybitApiKey" 
+                           placeholder="KozloxFlNJjtCw7pmY">
+                    <small>API ключ для доступа к расширенным данным биржи</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="bybitSecretKey">Bybit Secret Key (опционально)</label>
+                    <input type="password" id="bybitSecretKey" name="bybitSecretKey" 
+                           placeholder="VNjjjTHhOMM6qWJa1emd50X67apN97pYYzYB">
+                    <small>Секретный ключ для аутентификации</small>
+                </div>
+            </div>
+
+            <!-- Analysis Tab -->
+            <div id="analysis" class="tab-content">
+                <div class="instructions">
+                    <h3>📊 Настройка анализа рынка</h3>
+                    <p>Выберите интервал анализа и валютные пары для мониторинга. 
+                       Рекомендуется использовать интервал 4 часа для swing-торговли.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="analysisInterval">Интервал анализа *</label>
+                    <select id="analysisInterval" name="analysisInterval" required>
+                        <option value="15m">15 минут</option>
+                        <option value="30m">30 минут</option>
+                        <option value="1h">1 час</option>
+                        <option value="2h">2 часа</option>
+                        <option value="4h" selected>4 часа (рекомендуется)</option>
+                        <option value="6h">6 часов</option>
+                        <option value="12h">12 часов</option>
+                        <option value="1d">1 день</option>
+                    </select>
+                    <small>Временной интервал для технического анализа</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Валютные пары для анализа *</label>
+                    <small>Выберите валютные пары для мониторинга (рекомендуется 5-15 пар)</small>
+                    <div class="pairs-grid" id="pairsGrid">
+                        <!-- Пары будут добавлены динамически -->
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button type="button" class="button" onclick="selectPopularPairs()">Выбрать популярные пары</button>
+                    <button type="button" class="button secondary" onclick="clearAllPairs()">Очистить все</button>
+                    <button type="button" class="button secondary" onclick="selectAllPairs()">Выбрать все</button>
+                </div>
+            </div>
+
+            <!-- Status Tab -->
+            <div id="status" class="tab-content">
+                <div class="instructions">
+                    <h3>⚙️ Статус системы</h3>
+                    <p>Проверьте статус всех компонентов системы перед запуском бота.</p>
+                </div>
+
+                <div id="systemStatus">
+                    <!-- Статус будет загружен динамически -->
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <button type="button" class="button" onclick="checkSystemStatus()">
+                        <span id="statusLoading" class="loading" style="display: none;"></span>
+                        Проверить статус
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div style="padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+            <button type="button" class="button success" onclick="saveConfiguration()" style="font-size: 1.1rem; padding: 15px 30px;">
+                <span id="saveLoading" class="loading" style="display: none;"></span>
+                💾 Сохранить настройки
+            </button>
+            <div id="saveResult" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Глобальные переменные
+        let availablePairs = [];
+        let currentConfig = {};
+
+        // Переключение вкладок
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Загрузка конфигурации при старте
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadConfiguration();
+            await loadAvailablePairs();
+            renderPairsGrid();
+        });
+
+        // Загрузка текущей конфигурации
+        async function loadConfiguration() {
+            try {
+                const response = await fetch('/admin/api/config');
+                if (response.ok) {
+                    currentConfig = await response.json();
+                    fillForm(currentConfig);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки конфигурации:', error);
+            }
+        }
+
+        // Заполнение формы данными
+        function fillForm(config) {
+            document.getElementById('telegramBotToken').value = config.telegramBotToken || '';
+            document.getElementById('telegramChatId').value = config.telegramChatId || '';
+            document.getElementById('bybitApiKey').value = config.bybitApiKey || '';
+            document.getElementById('bybitSecretKey').value = config.bybitSecretKey || '';
+            document.getElementById('analysisInterval').value = config.analysisInterval || '4h';
+        }
+
+        // Загрузка доступных пар
+        async function loadAvailablePairs() {
+            try {
+                const response = await fetch('/admin/api/available-pairs');
+                if (response.ok) {
+                    availablePairs = await response.json();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки пар:', error);
+            }
+        }
+
+        // Отрисовка сетки валютных пар
+        function renderPairsGrid() {
+            const grid = document.getElementById('pairsGrid');
+            grid.innerHTML = '';
+
+            availablePairs.forEach(pair => {
+                const isSelected = currentConfig.analysisPairs && currentConfig.analysisPairs.includes(pair);
+                
+                const div = document.createElement('div');
+                div.className = `pair-checkbox ${isSelected ? 'selected' : ''}`;
+                div.innerHTML = `
+                    <input type="checkbox" id="pair_${pair}" ${isSelected ? 'checked' : ''} 
+                           onchange="togglePairSelection('${pair}', this.checked)">
+                    <label for="pair_${pair}">${pair}</label>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        // Переключение выбора валютной пары
+        function togglePairSelection(pair, selected) {
+            const checkbox = document.getElementById(`pair_${pair}`);
+            const container = checkbox.parentElement;
+            
+            if (selected) {
+                container.classList.add('selected');
+            } else {
+                container.classList.remove('selected');
+            }
+        }
+
+        // Выбор популярных пар
+        function selectPopularPairs() {
+            const popularPairs = ['BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'ADA/USDT', 'SOL/USDT', 'XRP/USDT', 'DOT/USDT', 'LINK/USDT'];
+            
+            availablePairs.forEach(pair => {
+                const checkbox = document.getElementById(`pair_${pair}`);
+                const isPopular = popularPairs.includes(pair);
+                checkbox.checked = isPopular;
+                togglePairSelection(pair, isPopular);
+            });
+        }
+
+        // Очистить все пары
+        function clearAllPairs() {
+            availablePairs.forEach(pair => {
+                const checkbox = document.getElementById(`pair_${pair}`);
+                checkbox.checked = false;
+                togglePairSelection(pair, false);
+            });
+        }
+
+        // Выбрать все пары
+        function selectAllPairs() {
+            availablePairs.forEach(pair => {
+                const checkbox = document.getElementById(`pair_${pair}`);
+                checkbox.checked = true;
+                togglePairSelection(pair, true);
+            });
+        }
+
+        // Проверка токена
+        async function validateToken() {
+            const token = document.getElementById('telegramBotToken').value;
+            if (!token) {
+                showAlert('tokenValidationResult', 'Введите Bot Token', 'error');
+                return;
+            }
+
+            showLoading('tokenValidationLoading', true);
+            
+            try {
+                const response = await fetch('/admin/api/validate-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                const result = await response.json();
+                
+                if (result.valid) {
+                    showAlert('tokenValidationResult', 
+                        `✅ Токен валиден! Бот: @${result.botInfo.username} (${result.botInfo.first_name})`, 
+                        'success');
+                } else {
+                    showAlert('tokenValidationResult', `❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert('tokenValidationResult', `❌ Ошибка: ${error.message}`, 'error');
+            } finally {
+                showLoading('tokenValidationLoading', false);
+            }
+        }
+
+        // Поиск Chat ID
+        async function findChatId() {
+            const token = document.getElementById('telegramBotToken').value;
+            if (!token) {
+                showAlert('chatIdResult', 'Сначала введите и проверьте Bot Token', 'error');
+                return;
+            }
+
+            showLoading('chatIdLoading', true);
+            
+            try {
+                const response = await fetch('/admin/api/find-chat-id', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                const result = await response.json();
+                
+                if (result.found) {
+                    document.getElementById('telegramChatId').value = result.chatId;
+                    showAlert('chatIdResult', 
+                        `✅ Chat ID найден: ${result.chatId}<br>Пользователь: ${result.firstName}${result.username ? ' (@' + result.username + ')' : ''}`, 
+                        'success');
+                } else {
+                    showAlert('chatIdResult', `❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert('chatIdResult', `❌ Ошибка: ${error.message}`, 'error');
+            } finally {
+                showLoading('chatIdLoading', false);
+            }
+        }
+
+        // Отправка тестового сообщения
+        async function sendTestMessage() {
+            const token = document.getElementById('telegramBotToken').value;
+            const chatId = document.getElementById('telegramChatId').value;
+            
+            if (!token || !chatId) {
+                showAlert('testMessageResult', 'Введите Bot Token и Chat ID', 'error');
+                return;
+            }
+
+            showLoading('testMessageLoading', true);
+            
+            try {
+                const response = await fetch('/admin/api/test-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, chatId })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('testMessageResult', '✅ Тестовое сообщение отправлено успешно!', 'success');
+                } else {
+                    showAlert('testMessageResult', `❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert('testMessageResult', `❌ Ошибка: ${error.message}`, 'error');
+            } finally {
+                showLoading('testMessageLoading', false);
+            }
+        }
+
+        // Проверка статуса системы
+        async function checkSystemStatus() {
+            showLoading('statusLoading', true);
+            
+            try {
+                const response = await fetch('/admin/api/system-status');
+                const status = await response.json();
+                
+                let html = '<div class="alert info"><h3>Статус компонентов:</h3>';
+                
+                html += `<p><span class="status-indicator ${status.api ? 'green' : 'red'}"></span>API Сервер: ${status.api ? 'Работает' : 'Недоступен'}</p>`;
+                html += `<p><span class="status-indicator ${status.cache ? 'green' : 'red'}"></span>Кеш: ${status.cache ? 'Активен' : 'Неактивен'}</p>`;
+                html += `<p><span class="status-indicator ${status.exchange ? 'green' : 'red'}"></span>Биржа: ${status.exchange ? 'Доступна' : 'Недоступна'}</p>`;
+                html += `<p><span class="status-indicator ${status.python ? 'green' : 'yellow'}"></span>Python сервис: ${status.python ? 'Работает' : 'Недоступен (опционально)'}</p>`;
+                
+                html += '</div>';
+                
+                document.getElementById('systemStatus').innerHTML = html;
+            } catch (error) {
+                showAlert('systemStatus', `❌ Ошибка проверки статуса: ${error.message}`, 'error');
+            } finally {
+                showLoading('statusLoading', false);
+            }
+        }
+
+        // Сохранение конфигурации
+        async function saveConfiguration() {
+            const config = {
+                telegramBotToken: document.getElementById('telegramBotToken').value,
+                telegramChatId: document.getElementById('telegramChatId').value,
+                bybitApiKey: document.getElementById('bybitApiKey').value,
+                bybitSecretKey: document.getElementById('bybitSecretKey').value,
+                analysisInterval: document.getElementById('analysisInterval').value,
+                analysisPairs: []
+            };
+
+            // Собираем выбранные пары
+            availablePairs.forEach(pair => {
+                const checkbox = document.getElementById(`pair_${pair}`);
+                if (checkbox.checked) {
+                    config.analysisPairs.push(pair);
+                }
+            });
+
+            // Валидация
+            if (!config.telegramBotToken) {
+                showAlert('saveResult', 'Bot Token обязателен', 'error');
+                showTab('telegram');
+                return;
+            }
+
+            if (!config.telegramChatId) {
+                showAlert('saveResult', 'Chat ID обязателен', 'error');
+                showTab('telegram');
+                return;
+            }
+
+            if (config.analysisPairs.length === 0) {
+                showAlert('saveResult', 'Выберите хотя бы одну валютную пару', 'error');
+                showTab('analysis');
+                return;
+            }
+
+            showLoading('saveLoading', true);
+            
+            try {
+                const response = await fetch('/admin/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('saveResult', '✅ Настройки сохранены успешно!', 'success');
+                    currentConfig = config;
+                } else {
+                    showAlert('saveResult', `❌ Ошибка сохранения: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert('saveResult', `❌ Ошибка: ${error.message}`, 'error');
+            } finally {
+                showLoading('saveLoading', false);
+            }
+        }
+
+        // Вспомогательные функции
+        function showAlert(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="alert ${type}">${message}</div>`;
+            
+            // Автоматически скрыть сообщение через 10 секунд
+            if (type === 'success') {
+                setTimeout(() => {
+                    element.innerHTML = '';
+                }, 10000);
+            }
+        }
+
+        function showLoading(elementId, show) {
+            const element = document.getElementById(elementId);
+            element.style.display = show ? 'inline-block' : 'none';
+        }
+    </script>
+</body>
+</html>

@@ -41,11 +41,10 @@ async function performInitialAnalysis(marketAnalysisService: MarketAnalysisServi
 
 async function startApiServer() {
   console.log('🌐 Запуск HTTP API сервера...');
-  
-  try {
+    try {
     // Создаем сервисы
     const cacheService = new CacheService();
-    const apiService = new ApiService(cacheService, 3001);
+    const apiService = new ApiService(cacheService, 3002);
     
     // Создаем сервисы для анализа рынка
     const exchangeService = new ExchangeService();
