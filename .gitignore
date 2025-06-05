@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+python-service/__pycache__/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.docker/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Coverage
+coverage/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock

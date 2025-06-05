@@ -1,0 +1,179 @@
+import schedule from 'node-schedule';
+import { ExchangeService } from './services/ExchangeService';
+import { TechnicalAnalysisService } from './services/TechnicalAnalysisService';
+import { PythonAnalysisService } from './services/PythonAnalysisService';
+import { TelegramService } from './services/TelegramService';
+import { MarketAnalysisService } from './services/MarketAnalysisService';
+import { BotConfig, MarketAnalysis, TradingSignal } from './types';
+
+export class CryptoSignalBot {
+  private config: BotConfig;
+  private exchangeService!: ExchangeService;
+  private technicalAnalysisService!: TechnicalAnalysisService;
+  private pythonAnalysisService!: PythonAnalysisService;
+  private telegramService!: TelegramService;
+  private marketAnalysisService!: MarketAnalysisService;
+  
+  private isRunning: boolean = false;
+  private lastSignals: Map<string, TradingSignal> = new Map();
+
+  constructor(config: BotConfig) {
+    this.config = config;
+    this.initializeServices();
+  }
+
+  private initializeServices(): void {
+    this.exchangeService = new ExchangeService();
+    this.technicalAnalysisService = new TechnicalAnalysisService();
+    this.pythonAnalysisService = new PythonAnalysisService(this.config.pythonServiceUrl);
+    this.telegramService = new TelegramService(this.config.telegramToken, this.config.telegramChatId);
+    
+    this.marketAnalysisService = new MarketAnalysisService(
+      this.exchangeService,
+      this.technicalAnalysisService,
+      this.pythonAnalysisService,
+      this.telegramService
+    );
+  }
+
+  async start(): Promise<void> {
+    console.log('🤖 Запуск криптовалютного сигнального бота...');
+    
+    try {
+      // Проверяем доступность Python сервиса
+      const pythonServiceHealth = await this.pythonAnalysisService.checkHealth();
+      if (!pythonServiceHealth) {
+        console.warn('⚠️ Python сервис недоступен. Бот будет работать без ARIMA/GARCH анализа.');
+      }
+
+      // Отправляем стартовое сообщение
+      await this.telegramService.sendMessage('🤖 Криптовалютный сигнальный бот запущен!');
+
+      this.isRunning = true;
+
+      // Запускаем первоначальный анализ
+      await this.performAnalysis();
+
+      // Настраиваем расписание
+      this.scheduleAnalysis();
+
+      console.log('✅ Бот успешно запущен и настроен');
+    } catch (error) {
+      console.error('❌ Ошибка запуска бота:', error);
+      throw error;
+    }
+  }
+
+  private scheduleAnalysis(): void {
+    // Анализ каждые 30 минут
+    schedule.scheduleJob('*/30 * * * *', async () => {
+      if (this.isRunning) {
+        await this.performAnalysis();
+      }
+    });
+
+    // Отчет каждые 4 часа
+    schedule.scheduleJob('0 */4 * * *', async () => {
+      if (this.isRunning) {
+        await this.sendPeriodicReport();
+      }
+    });
+
+    console.log('📅 Расписание анализа настроено: каждые 30 минут');
+    console.log('📊 Расписание отчетов настроено: каждые 4 часа');
+  }
+
+  private async performAnalysis(): Promise<void> {
+    try {
+      console.log('🔍 Начинаем анализ рынка...');
+      
+      const analyses = await this.marketAnalysisService.analyzeMultiplePairs(this.config.analysisPairs);
+      console.log(`📊 Проанализировано ${analyses.length} валютных пар`);
+
+      const signals = await this.marketAnalysisService.generateTradingSignals(analyses);
+      console.log(`📈 Сгенерировано ${signals.length} торговых сигналов`);
+
+      // Отправляем только новые или значительно изменившиеся сигналы
+      const newSignals = this.filterNewSignals(signals);
+      
+      for (const signal of newSignals) {
+        await this.telegramService.sendSignal(signal);
+        this.lastSignals.set(signal.pair, signal);
+        
+        // Задержка между отправками
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      if (newSignals.length > 0) {
+        console.log(`📤 Отправлено ${newSignals.length} новых сигналов`);
+      }
+
+    } catch (error) {
+      console.error('❌ Ошибка при выполнении анализа:', error);
+      
+      try {
+        await this.telegramService.sendMessage(
+          `❌ Ошибка анализа: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
+        );
+      } catch (telegramError) {
+        console.error('❌ Не удалось отправить сообщение об ошибке в Telegram:', telegramError);
+      }
+    }
+  }
+
+  private filterNewSignals(signals: TradingSignal[]): TradingSignal[] {
+    return signals.filter(signal => {
+      const lastSignal = this.lastSignals.get(signal.pair);
+      
+      // Если сигнала для этой пары не было
+      if (!lastSignal) return true;
+      
+      // Если изменился тип сигнала
+      if (lastSignal.signal !== signal.signal) return true;
+      
+      // Если значительно изменилась уверенность (>10%)
+      if (Math.abs(lastSignal.confidence - signal.confidence) > 0.1) return true;
+      
+      // Если прошло больше 4 часов с последнего сигнала
+      if (signal.timestamp - lastSignal.timestamp > 4 * 60 * 60 * 1000) return true;
+      
+      return false;
+    });
+  }
+
+  private async sendPeriodicReport(): Promise<void> {
+    try {
+      console.log('📊 Подготовка периодического отчета...');
+      
+      const analyses = await this.marketAnalysisService.analyzeMultiplePairs(this.config.analysisPairs);
+      await this.telegramService.sendAnalysisReport(analyses);
+      
+      console.log('📤 Периодический отчет отправлен');
+    } catch (error) {
+      console.error('❌ Ошибка отправки периодического отчета:', error);
+    }
+  }
+
+  async stop(): Promise<void> {
+    console.log('🛑 Остановка бота...');
+    
+    this.isRunning = false;
+    
+    // Отменяем все запланированные задачи
+    schedule.gracefulShutdown();
+    
+    try {
+      await this.telegramService.sendMessage('🛑 Криптовалютный сигнальный бот остановлен');
+    } catch (error) {
+      console.error('❌ Не удалось отправить сообщение об остановке:', error);
+    }
+    
+    console.log('✅ Бот остановлен');
+  }
+
+  // Метод для ручного запуска анализа
+  async runManualAnalysis(): Promise<void> {
+    console.log('🔧 Запуск ручного анализа...');
+    await this.performAnalysis();
+  }
+}

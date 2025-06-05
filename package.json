@@ -1,0 +1,35 @@
+{
+  "name": "crypto-signal-bot",
+  "version": "1.0.0",
+  "description": "Криптовалютный сигнальный бот с техническим анализом и математическими моделями",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "ts-node src/test.ts",
+    "test:components": "npm run test",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f python-analysis",
+    "setup": "npm install && npm run build",
+    "clean": "rm -rf dist node_modules"
+  },
+  "keywords": ["crypto", "trading", "bot", "technical-analysis", "arima", "garch"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ccxt": "^4.1.50",
+    "axios": "^1.6.0",
+    "node-schedule": "^2.1.1",
+    "technicalindicators": "^3.1.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/node-schedule": "^2.1.5",
+    "typescript": "^5.2.2",
+    "ts-node": "^10.9.1"
+  }
+}
