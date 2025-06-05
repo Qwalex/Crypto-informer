@@ -15,19 +15,38 @@ cd exchanges-2
 npm install
 ```
 
-### 2. Настройка переменных окружения
-Скопируйте файл `.env.example` в `.env`:
+### 2. Автоматическая настройка Telegram
+
+Используйте встроенный скрипт для автоматической настройки:
+
+**Windows:**
+```bash
+setup-telegram.bat
+```
+
+**Linux/Mac:**
+```bash
+./setup-telegram.sh
+```
+
+Скрипт автоматически найдет ваш Chat ID и создаст настройки.
+
+### 3. Ручная настройка (альтернатива)
+
+Если предпочитаете ручную настройку:
+
+1. Скопируйте файл `.env.example` в `.env`:
 ```bash
 cp .env.example .env
 ```
 
-Заполните обязательные параметры в `.env`:
+2. Заполните обязательные параметры в `.env`:
 ```env
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
 ```
 
-### 3. Создание Telegram бота
+### 4. Создание Telegram бота
 
 1. Найдите [@BotFather](https://t.me/botfather) в Telegram
 2. Отправьте команду `/newbot`

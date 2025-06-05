@@ -9,27 +9,43 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "ts-node src/test.ts",
+    "test:swing": "ts-node src/test-swing.ts",
     "test:components": "npm run test",
+    "diagnose": "ts-node src/diagnose-signals.ts",
+    "get-chat-id": "ts-node src/get-chat-id.ts",
+    "setup-telegram": "npm run get-chat-id",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f python-analysis",
     "setup": "npm install && npm run build",
     "clean": "rm -rf dist node_modules"
   },
-  "keywords": ["crypto", "trading", "bot", "technical-analysis", "arima", "garch"],
+  "keywords": [
+    "crypto",
+    "trading",
+    "bot",
+    "technical-analysis",
+    "arima",
+    "garch"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ccxt": "^4.1.50",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.2",
     "axios": "^1.6.0",
+    "ccxt": "^4.1.50",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^5.1.0",
+    "node-cache": "^5.1.2",
     "node-schedule": "^2.1.1",
-    "technicalindicators": "^3.1.0",
-    "dotenv": "^16.3.1"
+    "technicalindicators": "^3.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.0",
     "@types/node-schedule": "^2.1.5",
-    "typescript": "^5.2.2",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   }
 }

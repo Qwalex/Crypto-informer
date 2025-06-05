@@ -33,18 +33,30 @@ export interface MarketAnalysis {
   indicators: TechnicalIndicators;
   forecast: PythonAnalysisResult;
   currentPrice: number;
-  signal: 'BUY' | 'SELL' | 'HOLD';
+  signal: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL';
   confidence: number;
+  reasoning: {
+    technical: string[];
+    fundamental: string[];
+    risk: string;
+    timeframe: string;
+  };
 }
 
 export interface TradingSignal {
   pair: string;
-  signal: 'BUY' | 'SELL';
+  signal: 'STRONG_BUY' | 'BUY' | 'SELL' | 'STRONG_SELL';
   price: number;
   probability: number;
   confidence: number;
   timestamp: number;
   analysis: MarketAnalysis;
+  swingTarget: {
+    entry: number;
+    stopLoss: number;
+    takeProfit: number;
+    timeframe: string;
+  };
 }
 
 export interface BotConfig {

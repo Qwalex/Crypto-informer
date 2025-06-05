@@ -63,11 +63,13 @@ export class CryptoSignalBot {
       throw error;
     }
   }
+  private sendReportsScheduled = false; // Флаг для избежания дублирования
 
   private scheduleAnalysis(): void {
-    // Анализ каждые 30 минут
+    // Анализ каждые 30 минут без отправки отчетов
     schedule.scheduleJob('*/30 * * * *', async () => {
       if (this.isRunning) {
+        this.sendReportsScheduled = false; // Только анализ, без отчетов
         await this.performAnalysis();
       }
     });
@@ -75,7 +77,8 @@ export class CryptoSignalBot {
     // Отчет каждые 4 часа
     schedule.scheduleJob('0 */4 * * *', async () => {
       if (this.isRunning) {
-        await this.sendPeriodicReport();
+        this.sendReportsScheduled = true; // Полный анализ с отчетом
+        await this.performAnalysis();
       }
     });
 
@@ -85,15 +88,19 @@ export class CryptoSignalBot {
 
   private async performAnalysis(): Promise<void> {
     try {
-      console.log('🔍 Начинаем анализ рынка...');
-      
-      const analyses = await this.marketAnalysisService.analyzeMultiplePairs(this.config.analysisPairs);
+      console.log('🔍 Начинаем анализ рынка...');      const analyses = await this.marketAnalysisService.analyzeMultiplePairs(this.config.analysisPairs);
       console.log(`📊 Проанализировано ${analyses.length} валютных пар`);
 
       const signals = await this.marketAnalysisService.generateTradingSignals(analyses);
       console.log(`📈 Сгенерировано ${signals.length} торговых сигналов`);
 
-      // Отправляем только новые или значительно изменившиеся сигналы
+      // Отправляем отчет по анализу только каждые 4 часа или при первом запуске
+      if (this.sendReportsScheduled || this.lastSignals.size === 0) {
+        await this.telegramService.sendAnalysisReport(analyses);
+        console.log(`📤 Отправлен отчет по анализу всех ${analyses.length} пар`);
+      }
+
+      // Всегда отправляем активные торговые сигналы (если есть)
       const newSignals = this.filterNewSignals(signals);
       
       for (const signal of newSignals) {
@@ -105,7 +112,7 @@ export class CryptoSignalBot {
       }
 
       if (newSignals.length > 0) {
-        console.log(`📤 Отправлено ${newSignals.length} новых сигналов`);
+        console.log(`📤 Дополнительно отправлено ${newSignals.length} активных торговых сигналов`);
       }
 
     } catch (error) {
@@ -140,20 +147,6 @@ export class CryptoSignalBot {
       return false;
     });
   }
-
-  private async sendPeriodicReport(): Promise<void> {
-    try {
-      console.log('📊 Подготовка периодического отчета...');
-      
-      const analyses = await this.marketAnalysisService.analyzeMultiplePairs(this.config.analysisPairs);
-      await this.telegramService.sendAnalysisReport(analyses);
-      
-      console.log('📤 Периодический отчет отправлен');
-    } catch (error) {
-      console.error('❌ Ошибка отправки периодического отчета:', error);
-    }
-  }
-
   async stop(): Promise<void> {
     console.log('🛑 Остановка бота...');
     
