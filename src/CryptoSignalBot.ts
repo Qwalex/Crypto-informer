@@ -4,6 +4,8 @@ import { TechnicalAnalysisService } from './services/TechnicalAnalysisService';
 import { PythonAnalysisService } from './services/PythonAnalysisService';
 import { TelegramService } from './services/TelegramService';
 import { MarketAnalysisService } from './services/MarketAnalysisService';
+import { CacheService } from './services/CacheService';
+import { ApiService } from './services/ApiService';
 import { BotConfig, MarketAnalysis, TradingSignal } from './types';
 
 export class CryptoSignalBot {
@@ -13,6 +15,8 @@ export class CryptoSignalBot {
   private pythonAnalysisService!: PythonAnalysisService;
   private telegramService!: TelegramService;
   private marketAnalysisService!: MarketAnalysisService;
+  private cacheService!: CacheService;
+  private apiService!: ApiService;
   
   private isRunning: boolean = false;
   private lastSignals: Map<string, TradingSignal> = new Map();
@@ -21,21 +25,21 @@ export class CryptoSignalBot {
     this.config = config;
     this.initializeServices();
   }
-
   private initializeServices(): void {
     this.exchangeService = new ExchangeService();
     this.technicalAnalysisService = new TechnicalAnalysisService();
     this.pythonAnalysisService = new PythonAnalysisService(this.config.pythonServiceUrl);
     this.telegramService = new TelegramService(this.config.telegramToken, this.config.telegramChatId);
-    
-    this.marketAnalysisService = new MarketAnalysisService(
+    this.cacheService = new CacheService();
+      this.marketAnalysisService = new MarketAnalysisService(
       this.exchangeService,
       this.technicalAnalysisService,
       this.pythonAnalysisService,
       this.telegramService
     );
+    
+    this.apiService = new ApiService(this.cacheService, 3001);
   }
-
   async start(): Promise<void> {
     console.log('🤖 Запуск криптовалютного сигнального бота...');
     
@@ -46,8 +50,12 @@ export class CryptoSignalBot {
         console.warn('⚠️ Python сервис недоступен. Бот будет работать без ARIMA/GARCH анализа.');
       }
 
+      // Запускаем HTTP API сервер
+      await this.apiService.start();
+      console.log('🌐 HTTP API сервер запущен на порту 3000');
+
       // Отправляем стартовое сообщение
-      await this.telegramService.sendMessage('🤖 Криптовалютный сигнальный бот запущен!');
+      await this.telegramService.sendMessage('🤖 Криптовалютный сигнальный бот запущен!\n🌐 HTTP API доступен на http://localhost:3000');
 
       this.isRunning = true;
 
@@ -85,14 +93,19 @@ export class CryptoSignalBot {
     console.log('📅 Расписание анализа настроено: каждые 30 минут');
     console.log('📊 Расписание отчетов настроено: каждые 4 часа');
   }
-
   private async performAnalysis(): Promise<void> {
     try {
-      console.log('🔍 Начинаем анализ рынка...');      const analyses = await this.marketAnalysisService.analyzeMultiplePairs(this.config.analysisPairs);
+      console.log('🔍 Начинаем анализ рынка...');
+      
+      const analyses = await this.marketAnalysisService.analyzeMultiplePairs(this.config.analysisPairs);
       console.log(`📊 Проанализировано ${analyses.length} валютных пар`);
 
       const signals = await this.marketAnalysisService.generateTradingSignals(analyses);
       console.log(`📈 Сгенерировано ${signals.length} торговых сигналов`);
+
+      // Сохраняем данные в кеш для HTTP API
+      this.cacheService.setAnalysisData(analyses, signals);
+      console.log('📦 Данные сохранены в кеш для HTTP API');
 
       // Отправляем отчет по анализу только каждые 4 часа или при первом запуске
       if (this.sendReportsScheduled || this.lastSignals.size === 0) {
@@ -146,14 +159,16 @@ export class CryptoSignalBot {
       
       return false;
     });
-  }
-  async stop(): Promise<void> {
+  }  async stop(): Promise<void> {
     console.log('🛑 Остановка бота...');
     
     this.isRunning = false;
     
     // Отменяем все запланированные задачи
     schedule.gracefulShutdown();
+    
+    // Останавливаем API сервер
+    await this.apiService.stop();
     
     try {
       await this.telegramService.sendMessage('🛑 Криптовалютный сигнальный бот остановлен');
@@ -168,5 +183,15 @@ export class CryptoSignalBot {
   async runManualAnalysis(): Promise<void> {
     console.log('🔧 Запуск ручного анализа...');
     await this.performAnalysis();
+  }
+
+  // Метод для доступа к кешу извне
+  public getCacheService(): CacheService {
+    return this.cacheService;
+  }
+
+  // Метод для получения последних данных анализа
+  public getLastAnalysisData() {
+    return this.cacheService.getAnalysisData();
   }
 }

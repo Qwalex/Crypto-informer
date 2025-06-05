@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
+    "api": "ts-node src/api-server.ts",
+    "api:build": "npm run build && node dist/api-server.js",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "ts-node src/test.ts",
@@ -32,12 +34,12 @@
   "license": "ISC",
   "dependencies": {
     "@types/cors": "^2.8.18",
-    "@types/express": "^5.0.2",
+    "@types/express": "^4.17.22",
     "axios": "^1.6.0",
     "ccxt": "^4.1.50",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^5.1.0",
+    "express": "^4.21.2",
     "node-cache": "^5.1.2",
     "node-schedule": "^2.1.1",
     "technicalindicators": "^3.1.0"
