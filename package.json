@@ -4,15 +4,17 @@
   "description": "Криптовалютный сигнальный бот с техническим анализом и математическими моделями",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "api": "ts-node src/api-server.ts",
+    "start": "npm run build && concurrently \"node dist/index.js\" \"node dist/api-server.js\"",
+    "dev": "concurrently \"nodemon src/index.ts\" \"nodemon src/api-server.ts\"",
+    "api": "nodemon src/api-server.ts",
     "api:build": "npm run build && node dist/api-server.js",
     "admin": "npm run api",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "ts-node src/test.ts",
     "test:swing": "ts-node src/test-swing.ts",
+    "test:exchange": "ts-node src/test-exchange-info.ts",
+    "test:multi": "ts-node src/test-multi-exchange.ts",
     "test:components": "npm run test",
     "diagnose": "ts-node src/diagnose-signals.ts",
     "get-chat-id": "ts-node src/get-chat-id.ts",
@@ -20,8 +22,15 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f python-analysis",
+    "docker:restart": "docker-compose restart python-analysis",
+    "docker:rebuild": "docker-compose down && docker-compose build --no-cache && docker-compose up -d",
+    "full-start": "npm run docker:up && npm run dev",
+    "full-setup": "./start-full.sh",
+    "dashboard": "start dashboard.html",
     "setup": "npm install && npm run build",
-    "clean": "rm -rf dist node_modules"
+    "clean": "rm -rf dist node_modules",
+    "monitor": "node monitor.js",
+    "status": "node monitor.js"
   },
   "keywords": [
     "crypto",
@@ -53,6 +62,8 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^20.8.0",
     "@types/node-schedule": "^2.1.5",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.10",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   }

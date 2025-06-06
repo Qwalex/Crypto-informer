@@ -6,9 +6,8 @@ export interface BotConfiguration {
   telegramBotToken: string;
   telegramChatId: string;
   
-  // Биржа настройки (опциональные)
-  bybitApiKey?: string;
-  bybitSecretKey?: string;
+  // Выбранные биржи
+  selectedExchanges?: string[];
   
   // Анализ настройки
   analysisInterval: string;
@@ -58,13 +57,10 @@ export class ConfigService {
           }
         }
       }
-    }
-
-    return {
+    }    return {
       telegramBotToken: envVars.TELEGRAM_BOT_TOKEN || '',
       telegramChatId: envVars.TELEGRAM_CHAT_ID || '',
-      bybitApiKey: envVars.BYBIT_API_KEY || '',
-      bybitSecretKey: envVars.BYBIT_SECRET_KEY || '',
+      selectedExchanges: envVars.SELECTED_EXCHANGES ? envVars.SELECTED_EXCHANGES.split(',') : ['binance', 'bybit'],
       analysisInterval: envVars.ANALYSIS_INTERVAL || '4h',
       analysisPairs: envVars.ANALYSIS_PAIRS ? envVars.ANALYSIS_PAIRS.split(',') : [
         'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'ADA/USDT', 'SOL/USDT'
@@ -95,14 +91,11 @@ export class ConfigService {
       // Читаем существующий .env файл
       if (fs.existsSync(this.envPath)) {
         envContent = fs.readFileSync(this.envPath, 'utf8');
-      }
-
-      // Обновляем или добавляем значения
+      }      // Обновляем или добавляем значения
       const updates = {
         'TELEGRAM_BOT_TOKEN': config.telegramBotToken,
         'TELEGRAM_CHAT_ID': config.telegramChatId,
-        'BYBIT_API_KEY': config.bybitApiKey || '',
-        'BYBIT_SECRET_KEY': config.bybitSecretKey || '',
+        'SELECTED_EXCHANGES': config.selectedExchanges?.join(',') || 'binance,bybit',
         'ANALYSIS_INTERVAL': config.analysisInterval,
         'ANALYSIS_PAIRS': config.analysisPairs.join(',')
       };

@@ -273,6 +273,137 @@ body {
   gap: 20px;
 }
 
+#exchangesContainer {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+#exchangesContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+#exchangesContainer::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+#exchangesContainer::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+#exchangesContainer::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+#exchangeSearch {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  width: 300px;
+  font-size: 14px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#exchangeSearch:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+}
+
+.button.secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 2px;
+  transition: all 0.3s ease;
+}
+
+.button.secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.button.secondary:active {
+  transform: translateY(0);
+}
+
+#selectedCount {
+  font-weight: bold;
+  color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 14px;
+}
+
+.exchange-checkbox {
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  padding: 8px;
+  background: white;
+  border: 1px solid #e9ecef;
+}
+
+.exchange-checkbox:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.exchange-checkbox.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+}
+
+.exchange-checkbox.selected label {
+  color: white;
+}
+
+.exchange-checkbox.selected small {
+  color: rgba(255,255,255,0.9);
+}
+
+.exchange-checkbox input[type="checkbox"] {
+  display: none;
+  margin-right: 8px;
+  transform: scale(1.2);
+  accent-color: #667eea;
+}
+
+.exchange-checkbox label {
+  cursor: pointer;
+  display: block;
+  user-select: none;
+  line-height: 1.4;
+}
+
+.exchange-checkbox strong {
+  font-size: 14px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.exchange-checkbox small {
+  font-size: 12px;
+  opacity: 0.8;
+  line-height: 1.2;
+}
+
 @media (max-width: 768px) {
   .tabs {
     flex-direction: column;
@@ -292,5 +423,21 @@ body {
   
   .currency-grid {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+  
+  #exchangesContainer {
+    grid-template-columns: 1fr;
+    max-height: 300px;
+  }
+  
+  #exchangeSearch {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .button.secondary {
+    font-size: 12px;
+    padding: 6px 12px;
+    margin: 1px;
   }
 }

@@ -48,12 +48,12 @@ export class MarketAnalysisService {
         ohlcvData: ohlcv1h
       });
 
-      const signal = this.generateSwingSignal(swingAnalysis);
-      const reasoning = this.generateReasoning(swingAnalysis, signal);
+      const signal = this.generateSwingSignal(swingAnalysis);      const reasoning = this.generateReasoning(swingAnalysis, signal);
       const swingTargets = this.calculateSwingTargets(currentPrice, indicators1d, signal);
 
       return {
         pair,
+        exchange: this.exchangeService.getExchangeName(),
         probability: swingAnalysis.probability,
         indicators: indicators1h, // Основные индикаторы для отображения
         forecast,
@@ -79,10 +79,43 @@ export class MarketAnalysisService {
         // Задержка между запросами
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
-        console.error(`❌ Пропускаем пару ${pair} из-за ошибки:`, error);
+        console.error(`❌ Ошибка анализа пары ${pair}:`, error);
+        continue;
       }
     }
 
+    return analyses;
+  }
+
+  async analyzeMultipleExchanges(pairs: string[]): Promise<MarketAnalysis[]> {
+    const analyses: MarketAnalysis[] = [];
+    const availableExchanges = this.exchangeService.getAvailableExchanges();
+
+    console.log(`🔍 Анализируем ${pairs.length} пар на ${availableExchanges.length} биржах...`);
+
+    for (const exchangeName of availableExchanges) {
+      console.log(`\n🏦 Анализ на бирже: ${exchangeName.toUpperCase()}`);
+      
+      // Устанавливаем текущую биржу
+      this.exchangeService.setCurrentExchange(exchangeName);
+      
+      for (const pair of pairs) {
+        try {
+          const analysis = await this.analyzePair(pair);
+          analyses.push(analysis);
+          
+          console.log(`  ✅ ${pair} (${exchangeName}) - ${analysis.signal}`);
+          
+          // Задержка между запросами для избежания ограничений API
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (error) {
+          console.error(`  ❌ Ошибка анализа ${pair} на ${exchangeName}:`, error);
+          continue;
+        }
+      }
+    }
+
+    console.log(`\n📊 Общий результат: проанализировано ${analyses.length} пар`);
     return analyses;
   }
 
@@ -99,6 +132,7 @@ export class MarketAnalysisService {
 
         signals.push({
           pair: analysis.pair,
+          exchange: analysis.exchange,
           signal: analysis.signal,
           price: analysis.currentPrice,
           probability: analysis.probability,

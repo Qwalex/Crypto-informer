@@ -44,7 +44,7 @@ async function startApiServer() {
     try {
     // Создаем сервисы
     const cacheService = new CacheService();
-    const apiService = new ApiService(cacheService, 3002);
+    const apiService = new ApiService(cacheService, 3003);
     
     // Создаем сервисы для анализа рынка
     const exchangeService = new ExchangeService();

@@ -24,9 +24,8 @@ export class CryptoSignalBot {
   constructor(config: BotConfig) {
     this.config = config;
     this.initializeServices();
-  }
-  private initializeServices(): void {
-    this.exchangeService = new ExchangeService();
+  }  private initializeServices(): void {
+    this.exchangeService = new ExchangeService(this.config.selectedExchanges);
     this.technicalAnalysisService = new TechnicalAnalysisService();
     this.pythonAnalysisService = new PythonAnalysisService(this.config.pythonServiceUrl);
     this.telegramService = new TelegramService(this.config.telegramToken, this.config.telegramChatId);
@@ -92,13 +91,13 @@ export class CryptoSignalBot {
 
     console.log('📅 Расписание анализа настроено: каждые 30 минут');
     console.log('📊 Расписание отчетов настроено: каждые 4 часа');
-  }
-  private async performAnalysis(): Promise<void> {
+  }  private async performAnalysis(): Promise<void> {
     try {
       console.log('🔍 Начинаем анализ рынка...');
       
-      const analyses = await this.marketAnalysisService.analyzeMultiplePairs(this.config.analysisPairs);
-      console.log(`📊 Проанализировано ${analyses.length} валютных пар`);
+      // Используем новый метод для анализа на нескольких биржах
+      const analyses = await this.marketAnalysisService.analyzeMultipleExchanges(this.config.analysisPairs);
+      console.log(`📊 Проанализировано ${analyses.length} валютных пар на ${this.exchangeService.getAvailableExchanges().length} биржах`);
 
       const signals = await this.marketAnalysisService.generateTradingSignals(analyses);
       console.log(`📈 Сгенерировано ${signals.length} торговых сигналов`);

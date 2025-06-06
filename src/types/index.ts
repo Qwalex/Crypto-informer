@@ -29,6 +29,7 @@ export interface PythonAnalysisResult {
 
 export interface MarketAnalysis {
   pair: string;
+  exchange: string;
   probability: number;
   indicators: TechnicalIndicators;
   forecast: PythonAnalysisResult;
@@ -45,6 +46,7 @@ export interface MarketAnalysis {
 
 export interface TradingSignal {
   pair: string;
+  exchange: string;
   signal: 'STRONG_BUY' | 'BUY' | 'SELL' | 'STRONG_SELL';
   price: number;
   probability: number;
@@ -62,6 +64,7 @@ export interface TradingSignal {
 export interface BotConfig {
   telegramToken: string;
   telegramChatId: string;
+  selectedExchanges: string[];
   analysisInterval: string;
   analysisPairs: string[];
   pythonServiceUrl: string;

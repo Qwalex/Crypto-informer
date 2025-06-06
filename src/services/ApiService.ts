@@ -12,16 +12,19 @@ export class ApiService {
   private configService: ConfigService;
   private telegramHelper: TelegramHelperService;
   private port: number;
-  private server: any;  constructor(cacheService: CacheService, port: number = 3001) {
+  private server: any;
+
+  constructor(cacheService: CacheService, port: number = 3001) {
     this.app = express();
     this.cacheService = cacheService;
     this.configService = new ConfigService();
-    this.telegramHelper = new TelegramHelperService(''); // Инициализируем пустым токеном
+    this.telegramHelper = new TelegramHelperService();
     this.port = port;
     
     this.setupMiddleware();
     this.setupRoutes();
   }
+
   private setupMiddleware(): void {
     this.app.use(cors());
     this.app.use(express.json());
@@ -29,33 +32,27 @@ export class ApiService {
     
     // Настройка EJS шаблонизатора
     this.app.set('view engine', 'ejs');
-    this.app.set('views', path.join(__dirname, '../../views'));
+    this.app.set('views', path.join(process.cwd(), 'views'));
     
     // Статические файлы
-    this.app.use('/static', express.static(path.join(__dirname, '../../public')));
-    
-    // Логирование запросов
-    this.app.use((req, res, next) => {
-      console.log(`🌐 ${new Date().toISOString()} - ${req.method} ${req.path}`);
-      next();
-    });
+    this.app.use(express.static(path.join(process.cwd(), 'public')));
   }
+
   private setupRoutes(): void {
-    // Админ-панель - главная страница
+    // Главная страница админки
     this.app.get('/admin', (req: Request, res: Response) => {
-      res.render('admin', { 
-        title: 'Управление Crypto Signal Bot',
-        timestamp: new Date().toISOString()
-      });
-    });    // API для получения текущей конфигурации
+      res.render('admin');
+    });
+
+    // API для получения конфигурации
     this.app.get('/api/admin/config', async (req: Request, res: Response) => {
       try {
-        const config = this.configService.loadConfiguration();
-        res.json({ success: true, config });
+        const config = await this.configService.loadConfiguration();
+        res.json(config);
       } catch (error) {
-        res.status(500).json({ 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Ошибка загрузки конфигурации' 
+        res.status(500).json({
+          error: 'Ошибка загрузки конфигурации',
+          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
         });
       }
     });
@@ -63,247 +60,290 @@ export class ApiService {
     // API для сохранения конфигурации
     this.app.post('/api/admin/config', async (req: Request, res: Response) => {
       try {
-        const config = req.body;
-        this.configService.saveConfiguration(config);
-        res.json({ success: true, message: 'Конфигурация сохранена' });
+        const config = req.body as BotConfiguration;
+        await this.configService.saveConfiguration(config);
+        res.json({ success: true, message: 'Конфигурация сохранена успешно' });
       } catch (error) {
-        res.status(500).json({ 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Ошибка сохранения конфигурации' 
+        res.status(500).json({
+          success: false,
+          error: 'Ошибка сохранения конфигурации',
+          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
         });
       }
     });
 
-    // API для проверки Telegram Bot Token
+    // API для получения доступных валютных пар
+    this.app.get('/api/admin/available-pairs', async (req: Request, res: Response) => {
+      try {
+        const exchanges = req.query.exchanges as string;
+        const selectedExchanges = exchanges ? exchanges.split(',') : ['bybit'];
+        
+        console.log('Запрос пар для бирж:', selectedExchanges);
+        
+        // Получаем реальные данные с биржи через кеш
+        const cachedData = this.cacheService.getAnalysisData();
+        let availablePairs: string[] = [];
+
+        if (cachedData && cachedData.analyses && cachedData.analyses.length > 0) {
+          // Если есть кешированные данные, используем их
+          availablePairs = [...new Set(cachedData.analyses.map(a => a.pair))].sort();        } else {
+          // Если нет кешированных данных, используем популярные пары как fallback
+          // Базовые пары для всех бирж
+          const basePairs = [
+            'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'XRP/USDT', 'ADA/USDT', 'SOL/USDT',
+            'DOGE/USDT', 'DOT/USDT', 'MATIC/USDT', 'SHIB/USDT', 'AVAX/USDT', 'LINK/USDT',
+            'UNI/USDT', 'LTC/USDT', 'BCH/USDT', 'ATOM/USDT', 'FIL/USDT', 'TRX/USDT',
+            'ETC/USDT', 'XMR/USDT', 'ALGO/USDT', 'VET/USDT', 'ICP/USDT', 'THETA/USDT',
+            'MANA/USDT', 'SAND/USDT', 'AXS/USDT', 'NEAR/USDT', 'GRT/USDT', 'ENJ/USDT',
+            'CHZ/USDT', 'SUSHI/USDT', 'BAT/USDT', 'CRV/USDT', 'COMP/USDT', 'YFI/USDT'
+          ];          availablePairs = [...basePairs];
+
+          // Добавляем специфичные токены для различных бирж
+          const exchangeSpecificTokens: Record<string, string[]> = {
+            'binance': ['BNB/USDT', 'BUSD/USDT', 'TUSD/USDT', 'FDUSD/USDT'],
+            'bybit': ['BYB/USDT'],
+            'okx': ['OKB/USDT', 'OKT/USDT'],
+            'kucoin': ['KCS/USDT'],
+            'gate': ['GT/USDT'],
+            'mexc': ['MEXC/USDT', 'MX/USDT'],
+            'bitget': ['BGB/USDT'],
+            'huobi': ['HT/USDT'],
+            'htx': ['HT/USDT'],
+            'bitfinex': ['LEO/USDT'],
+            'cryptocom': ['CRO/USDT'],
+            'lbank': ['LBK/USDT'],
+            'coinbase': ['USDC/USDT'],
+            'kraken': ['XBT/USDT'],
+            'bitmex': ['XBT/USDT'],
+            'phemex': ['PHEMEX/USDT'],
+            'bitmart': ['BMX/USDT'],
+            'ascendex': ['ASD/USDT'],
+            'digifinex': ['DGT/USDT'],
+            'xt': ['XT/USDT'],
+            'whitebit': ['WBT/USDT'],
+            'probit': ['PROB/USDT'],
+            'latoken': ['LA/USDT'],
+            'poloniex': ['TRX/USDT'],
+            'deribit': ['BTC/USD', 'ETH/USD'],
+            'bithumb': ['KRW/USDT'],
+            'upbit': ['KRW/USDT'],
+            'coinone': ['KRW/USDT'],
+            'bitflyer': ['JPY/USDT'],
+            'zaif': ['JPY/USDT'],
+            'btcmarkets': ['AUD/USDT'],
+            'coinspot': ['AUD/USDT'],
+            'independentreserve': ['AUD/USDT'],
+            'mercado': ['BRL/USDT'],
+            'novadax': ['BRL/USDT'],
+            'btcturk': ['TRY/USDT'],
+            'bit2c': ['ILS/USDT'],
+            'indodax': ['IDR/USDT'],
+            'tokocrypto': ['IDR/USDT'],
+            'coinsph': ['PHP/USDT'],
+            'ndax': ['CAD/USDT'],
+            'bitso': ['MXN/USDT'],
+            'luno': ['ZAR/USDT']
+          };
+
+          selectedExchanges.forEach(exchange => {
+            if (exchangeSpecificTokens[exchange]) {
+              availablePairs.push(...exchangeSpecificTokens[exchange]);
+            }
+          });
+          
+          availablePairs = [...new Set(availablePairs)].sort();
+        }
+        
+        console.log(`Возвращаем ${availablePairs.length} пар для бирж: ${selectedExchanges.join(', ')}`);
+        res.json(availablePairs);
+      } catch (error) {
+        res.status(500).json({
+          error: 'Ошибка получения списка пар',
+          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
+        });
+      }
+    });
+
+    // Проверка Bot Token
     this.app.post('/api/admin/telegram/validate', async (req: Request, res: Response) => {
       try {
         const { botToken } = req.body;
         
         if (!botToken) {
-          return res.status(400).json({ 
-            success: false, 
-            error: 'Bot Token не указан' 
+          return res.status(400).json({
+            valid: false,
+            error: 'Bot Token не указан'
           });
         }
 
-        // Создаем временный экземпляр TelegramHelperService с новым токеном
-        const tempHelper = new TelegramHelperService(botToken);
-        const result = await tempHelper.validateBotToken();
-        
+        const result = await this.telegramHelper.validateBotToken(botToken);
         res.json(result);
       } catch (error) {
-        res.status(500).json({ 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Ошибка проверки токена' 
+        res.status(500).json({
+          valid: false,
+          error: 'Ошибка проверки токена',
+          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
         });
       }
     });
 
-    // API для поиска Chat ID
+    // Поиск Chat ID
     this.app.post('/api/admin/telegram/find-chat', async (req: Request, res: Response) => {
       try {
         const { botToken } = req.body;
         
         if (!botToken) {
-          return res.status(400).json({ 
-            success: false, 
-            error: 'Bot Token не указан' 
+          return res.status(400).json({
+            found: false,
+            error: 'Bot Token не указан'
           });
         }
 
-        // Создаем временный экземпляр TelegramHelperService с новым токеном
-        const tempHelper = new TelegramHelperService(botToken);
-        const result = await tempHelper.findChatId();
-        
+        const result = await this.telegramHelper.findChatId(botToken);
         res.json(result);
       } catch (error) {
-        res.status(500).json({ 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Ошибка поиска Chat ID' 
+        res.status(500).json({
+          found: false,
+          error: 'Ошибка поиска Chat ID',
+          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
         });
       }
     });
 
-    // API для отправки тестового сообщения
+    // Отправка тестового сообщения
     this.app.post('/api/admin/telegram/test', async (req: Request, res: Response) => {
       try {
         const { botToken, chatId } = req.body;
         
         if (!botToken || !chatId) {
-          return res.status(400).json({ 
-            success: false, 
-            error: 'Bot Token и Chat ID обязательны' 
+          return res.status(400).json({
+            success: false,
+            error: 'Bot Token и Chat ID обязательны'
           });
         }
 
-        // Создаем временный экземпляр TelegramHelperService с новым токеном
-        const tempHelper = new TelegramHelperService(botToken);
-        const result = await tempHelper.sendTestMessage(chatId);
-        
+        const result = await this.telegramHelper.sendTestMessage(botToken, chatId);
         res.json(result);
       } catch (error) {
-        res.status(500).json({ 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Ошибка отправки тестового сообщения' 
+        res.status(500).json({
+          success: false,
+          error: 'Ошибка отправки сообщения',
+          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
         });
       }
-    });
-
-    // API для получения статуса системы
-    this.app.get('/api/admin/status', (req: Request, res: Response) => {
+    });    // Проверка статуса системы
+    this.app.get('/api/admin/status', async (req: Request, res: Response) => {
       try {
-        const cacheData = this.cacheService.getAnalysisData();
-        const status = {
-          timestamp: new Date().toISOString(),
-          cache: {
-            hasData: !!cacheData,
-            lastUpdate: cacheData?.lastUpdate ? new Date(cacheData.lastUpdate).toISOString() : null,
-            dataAge: cacheData ? Math.round((Date.now() - cacheData.lastUpdate) / (1000 * 60)) : null,
-            analysisCount: cacheData?.analyses?.length || 0
-          },
-          system: {
-            uptime: process.uptime(),
-            memory: process.memoryUsage(),
-            version: process.version
-          }
-        };
+        const cachedData = this.cacheService.getAnalysisData();
+        const config = await this.configService.loadConfiguration();
         
-        res.json({ success: true, status });
+        // Получаем информацию о поддерживаемых биржах
+        const supportedExchanges = [
+          'alpaca', 'apex', 'ascendex', 'bequant', 'bigone', 'binance', 'binancecoinm', 'binanceus', 'binanceusdm', 'bingx',
+          'bit2c', 'bitbank', 'bitbns', 'bitfinex', 'bitflyer', 'bitget', 'bithumb', 'bitmart', 'bitmex', 'bitopro',
+          'bitrue', 'bitso', 'bitstamp', 'bitteam', 'bittrade', 'bitvavo', 'blockchaincom', 'blofin', 'btcalpha', 'btcbox',
+          'btcmarkets', 'btcturk', 'bybit', 'cex', 'coinbase', 'coinbaseadvanced', 'coinbaseexchange', 'coinbaseinternational', 'coincatch', 'coincheck',
+          'coinex', 'coinlist', 'coinmate', 'coinmetro', 'coinone', 'coinsph', 'coinspot', 'cryptocom', 'cryptomus', 'defx',
+          'delta', 'deribit', 'derive', 'digifinex', 'ellipx', 'exmo', 'fmfwio', 'gate', 'gateio', 'gemini',
+          'hashkey', 'hitbtc', 'hollaex', 'htx', 'huobi', 'hyperliquid', 'independentreserve', 'indodax', 'kraken', 'krakenfutures',
+          'kucoin', 'kucoinfutures', 'latoken', 'lbank', 'luno', 'mercado', 'mexc', 'modetrade', 'myokx', 'ndax',
+          'novadax', 'oceanex', 'okcoin', 'okx', 'okxus', 'onetrading', 'oxfun', 'p2b', 'paradex', 'paymium',
+          'phemex', 'poloniex', 'probit', 'timex', 'tokocrypto', 'tradeogre', 'upbit', 'vertex', 'wavesexchange', 'whitebit',
+          'woo', 'woofipro', 'xt', 'yobit', 'zaif', 'zonda'
+        ];
+        
+        const status = {
+          api: true, // API работает, раз мы отвечаем
+          cache: cachedData !== null,
+          exchange: cachedData?.analyses && cachedData.analyses.length > 0,
+          python: false, // TODO: проверить доступность Python сервиса
+          timestamp: new Date().toISOString(),
+          uptime: process.uptime(),
+          memory: {
+            used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+            total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+          },          exchanges: {
+            supported: supportedExchanges.length,
+            configured: config.selectedExchanges || [],
+            availablePairs: cachedData?.analyses ? cachedData.analyses.length : 0
+          },
+          version: '2.0.0',
+          features: [
+            'Поддержка 106 бирж ccxt',
+            'Технический анализ',
+            'Swing торговля', 
+            'Telegram уведомления',
+            'Веб админ-панель',
+            'API для интеграций'
+          ]
+        };
+
+        res.json(status);
       } catch (error) {
-        res.status(500).json({ 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Ошибка получения статуса' 
+        res.status(500).json({
+          error: 'Ошибка проверки статуса',
+          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
         });
       }
     });
 
-    // Главная страница API
-    this.app.get('/', (req: Request, res: Response) => {
-      res.json({
-        name: 'Crypto Signal Bot API',
-        version: '1.0.0',
-        description: 'API для получения актуальных данных анализа криптовалютного рынка',
-        endpoints: {
-          '/admin': 'Панель управления ботом',
-          '/api/analysis': 'Полный анализ рынка',
-          '/api/signals': 'Активные торговые сигналы',
-          '/api/market': 'Обзор рыночных условий',
-          '/api/pairs': 'Анализ по отдельным парам',
-          '/api/status': 'Статус системы',
-          '/api/cache': 'Информация о кеше'
-        },
-        timestamp: new Date().toISOString()
-      });
-    });// Полный анализ рынка
+    // Существующие API маршруты
     this.app.get('/api/analysis', (req: Request, res: Response) => {
       try {
         const data = this.cacheService.getAnalysisData();
         
         if (!data) {
-          return res.status(404).json({
+          return res.status(503).json({
             error: 'Данные анализа недоступны',
-            message: 'Анализ еще не выполнялся или данные устарели'
+            message: 'Система еще не получила данные от Python сервиса'
           });
-        }
+        }        const analyses = data.analyses.map(analysis => ({
+          pair: analysis.pair,
+          signal: analysis.signal,
+          probability: Math.round(analysis.probability * 100),
+          currentPrice: analysis.currentPrice
+        }));        const signals = data.signals.map(signal => ({
+          pair: signal.pair,
+          action: signal.signal,
+          entryPrice: signal.swingTarget.entry,
+          stopLoss: signal.swingTarget.stopLoss,
+          takeProfit: signal.swingTarget.takeProfit,
+          swingTarget: signal.swingTarget,
+          timestamp: signal.timestamp
+        }));
 
-        const responseData = {
-          success: true,
-          data: {
-            analyses: data.analyses.map(analysis => ({
-              pair: analysis.pair,
-              signal: analysis.signal,
-              confidence: Math.round(analysis.confidence * 100),
-              probability: Math.round(analysis.probability * 100),
-              currentPrice: analysis.currentPrice,
-              reasoning: analysis.reasoning,
-              timestamp: data.lastUpdate
-            })),
-            marketConditions: data.marketConditions,
-            lastUpdate: new Date(data.lastUpdate).toISOString(),
-            dataAge: Math.round((Date.now() - data.lastUpdate) / (1000 * 60)) // возраст в минутах
-          }
+        const summary = {
+          totalPairs: data.analyses.length,
+          activeSignals: data.signals.length,
+          dataAge: Math.round((Date.now() - data.lastUpdate) / (1000 * 60))
         };
 
-        res.json(responseData);
+        res.json({
+          success: true,
+          data: {
+            analyses,
+            signals,
+            summary,
+            lastUpdate: new Date(data.lastUpdate).toISOString()
+          }
+        });
       } catch (error) {
         res.status(500).json({
           error: 'Ошибка получения данных анализа',
           message: error instanceof Error ? error.message : 'Неизвестная ошибка'
         });
       }
-    });    // Активные торговые сигналы
-    this.app.get('/api/signals', (req: Request, res: Response) => {
-      try {
-        const data = this.cacheService.getAnalysisData();
-        
-        if (!data) {
-          return res.status(404).json({
-            error: 'Сигналы недоступны',
-            message: 'Анализ еще не выполнялся или данные устарели'
-          });
-        }
+    });
 
-        const activeSignals = data.signals.map(signal => ({
-          pair: signal.pair,
-          signal: signal.signal,
-          confidence: Math.round(signal.confidence * 100),
-          price: signal.price,
-          swingTarget: signal.swingTarget,
-          timestamp: signal.timestamp
-        }));
-
-        res.json({
-          success: true,
-          data: {
-            signals: activeSignals,
-            count: activeSignals.length,
-            lastUpdate: new Date(data.lastUpdate).toISOString()
-          }
-        });
-      } catch (error) {
-        res.status(500).json({
-          error: 'Ошибка получения сигналов',
-          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
-        });
-      }
-    });    // Обзор рыночных условий
-    this.app.get('/api/market', (req: Request, res: Response) => {
-      try {
-        const data = this.cacheService.getAnalysisData();
-        
-        if (!data) {
-          return res.status(404).json({
-            error: 'Данные рынка недоступны',
-            message: 'Анализ еще не выполнялся или данные устарели'
-          });
-        }
-
-        res.json({
-          success: true,
-          data: {
-            ...data.marketConditions,
-            averageConfidence: Math.round(data.marketConditions.averageConfidence * 100),
-            activeSignals: data.signals.length,
-            lastUpdate: new Date(data.lastUpdate).toISOString(),
-            dataAge: Math.round((Date.now() - data.lastUpdate) / (1000 * 60))
-          }
-        });
-      } catch (error) {
-        res.status(500).json({
-          error: 'Ошибка получения данных рынка',
-          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
-        });
-      }
-    });    // Анализ конкретной пары
-    this.app.get('/api/pairs/:symbol', (req: Request, res: Response) => {
+    this.app.get('/api/analysis/:symbol', (req: Request, res: Response) => {
       try {
         const symbol = req.params.symbol.toUpperCase();
         const data = this.cacheService.getAnalysisData();
-        
+
         if (!data) {
-          return res.status(404).json({
-            error: 'Данные недоступны',
-            message: 'Анализ еще не выполнялся или данные устарели'
+          return res.status(503).json({
+            error: 'Данные анализа недоступны',
+            message: 'Система еще не получила данные от Python сервиса'
           });
         }
 
@@ -323,23 +363,21 @@ export class ApiService {
         const pairSignal = data.signals.find(signal => 
           signal.pair.replace('/', '') === symbol || 
           signal.pair === symbol
-        );
-
-        res.json({
+        );        res.json({
           success: true,
           data: {
             pair: pairAnalysis.pair,
             signal: pairAnalysis.signal,
-            confidence: Math.round(pairAnalysis.confidence * 100),
             probability: Math.round(pairAnalysis.probability * 100),
             currentPrice: pairAnalysis.currentPrice,
-            reasoning: pairAnalysis.reasoning,
-            tradingSignal: pairSignal ? {
-              signal: pairSignal.signal,
+            activeSignal: pairSignal ? {
+              action: pairSignal.signal,
+              entryPrice: pairSignal.swingTarget.entry,
+              stopLoss: pairSignal.swingTarget.stopLoss,
+              takeProfit: pairSignal.swingTarget.takeProfit,
               swingTarget: pairSignal.swingTarget,
               timestamp: pairSignal.timestamp
-            } : null,
-            lastUpdate: new Date(data.lastUpdate).toISOString()
+            } : null
           }
         });
       } catch (error) {
@@ -348,90 +386,33 @@ export class ApiService {
           message: error instanceof Error ? error.message : 'Неизвестная ошибка'
         });
       }
-    });    // Статус системы
-    this.app.get('/api/status', (req: Request, res: Response) => {
-      try {
-        const data = this.cacheService.getAnalysisData();
-        const cacheStats = this.cacheService.getCacheStats();
-        const lastUpdate = this.cacheService.getLastUpdateTime();
-        const isFresh = this.cacheService.isDataFresh(30);
+    });
 
-        res.json({
-          success: true,
-          data: {
-            status: isFresh ? 'ACTIVE' : 'STALE',
-            dataAvailable: !!data,
-            lastUpdate: lastUpdate ? lastUpdate.toISOString() : null,
-            dataAge: lastUpdate ? Math.round((Date.now() - lastUpdate.getTime()) / (1000 * 60)) : null,
-            cache: cacheStats,
-            uptime: Math.round(process.uptime()),
-            memory: {
-              used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-              total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
-            }
-          }
-        });
-      } catch (error) {
-        res.status(500).json({
-          error: 'Ошибка получения статуса',
-          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
-        });
-      }
-    });    // Информация о кеше
-    this.app.get('/api/cache', (req: Request, res: Response) => {
-      try {
-        const stats = this.cacheService.getCacheStats();
-        const lastUpdate = this.cacheService.getLastUpdateTime();
-        
-        res.json({
-          success: true,
-          data: {
-            stats,
-            lastUpdate: lastUpdate ? lastUpdate.toISOString() : null,
-            isFresh: this.cacheService.isDataFresh(30)
-          }
-        });
-      } catch (error) {
-        res.status(500).json({
-          error: 'Ошибка получения информации о кеше',
-          message: error instanceof Error ? error.message : 'Неизвестная ошибка'
-        });
-      }
-    });    // Обработка 404
-    this.app.use('*', (req, res) => {
+    // Обработка 404
+    this.app.use((req: Request, res: Response) => {
       res.status(404).json({
-        error: 'Эндпоинт не найден',
-        message: `Путь ${req.originalUrl} не существует`,
-        availableEndpoints: [
-          '/admin',
+        error: 'Маршрут не найден',
+        availableRoutes: [
           '/api/analysis',
-          '/api/signals', 
-          '/api/market',
-          '/api/pairs/:symbol',
-          '/api/status',
-          '/api/cache',
-          '/api/admin/config',
-          '/api/admin/status'
+          '/api/analysis/:symbol',
+          '/admin'
         ]
       });
     });
-  }  // Запуск сервера
-  start(): Promise<void> {
+  }
+
+  async start(): Promise<void> {
     return new Promise((resolve) => {
       this.server = this.app.listen(this.port, () => {
         console.log(`🌐 API сервер запущен на порту ${this.port}`);
-        console.log(`📋 Документация API: http://localhost:${this.port}`);
+        console.log(`📊 API доступно: http://localhost:${this.port}/api/analysis`);
         console.log(`⚙️ Админ-панель: http://localhost:${this.port}/admin`);
-        console.log(`📊 Анализ рынка: http://localhost:${this.port}/api/analysis`);
-        console.log(`🎯 Торговые сигналы: http://localhost:${this.port}/api/signals`);
-        console.log(`📈 Обзор рынка: http://localhost:${this.port}/api/market`);
         resolve();
       });
     });
   }
 
-  // Остановка сервера
-  stop(): Promise<void> {
+  async stop(): Promise<void> {
     return new Promise((resolve) => {
       if (this.server) {
         this.server.close(() => {
