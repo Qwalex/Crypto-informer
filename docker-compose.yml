@@ -1,6 +1,15 @@
 version: '3.8'
 
+networks:
+  crypto-bot-network:
+    driver: bridge
+
+volumes:
+  node_modules:
+  dist:
+
 services:
+  # Python Analysis Service
   python-analysis:
     build: ./python-service
     ports:
@@ -17,3 +26,31 @@ services:
     volumes:
       - ./python-service:/app
     command: gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 app:app
+    networks:
+      - crypto-bot-network
+
+  # Main Crypto Bot Application (Production)
+  crypto-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PYTHON_SERVICE_URL=http://python-analysis:8000
+    restart: unless-stopped
+    depends_on:
+      python-analysis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); http.get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); });"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crypto-bot-network
+    volumes:
+      - ./bot-config.json:/app/bot-config.json:ro

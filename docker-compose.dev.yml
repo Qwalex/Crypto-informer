@@ -1,0 +1,48 @@
+version: '3.8'
+
+networks:
+  crypto-bot-dev:
+    driver: bridge
+
+volumes:
+  node_modules_dev:
+  
+services:
+  # Python Analysis Service (Development)
+  python-analysis-dev:
+    build: ./python-service
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    volumes:
+      - ./python-service:/app
+    command: python app.py
+    networks:
+      - crypto-bot-dev
+
+  # Main Crypto Bot Application (Development)
+  crypto-bot-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+    environment:
+      - NODE_ENV=development
+      - DEBUG=*
+      - PYTHON_SERVICE_URL=http://python-analysis-dev:8000
+    depends_on:
+      - python-analysis-dev
+    networks:
+      - crypto-bot-dev
+    volumes:
+      - .:/app
+      - node_modules_dev:/app/node_modules
+      - /app/dist  # Exclude dist from bind mount
+    command: ["npm", "run", "dev"]
+    stdin_open: true
+    tty: true

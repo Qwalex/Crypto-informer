@@ -17,7 +17,7 @@ async function performInitialAnalysis(marketAnalysisService: MarketAnalysisServi
   
   try {
     // Список пар для анализа (из .env или по умолчанию)
-    const analysisPairs = (process.env.ANALYSIS_PAIRS || 'BTC/USDT,ETH/USDT,BNB/USDT,XRP/USDT,ADA/USDT,SOL/USDT,DOGE/USDT,DOT/USDT,MATIC/USDT,SHIB/USDT').split(',');
+    const analysisPairs = (process.env.ANALYSIS_PAIRS || 'BTC/USDT,ETH/USDT,BNB/USDT,XRP/USDT,ADA/USDT,SOL/USDT,DOGE/USDT,DOT/USDT,SHIB/USDT').split(',');
     
     console.log(`📊 Анализируем ${analysisPairs.length} валютных пар...`);
     
