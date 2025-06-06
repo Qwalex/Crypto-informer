@@ -39,16 +39,6 @@ export class ApiService {
   }
 
   private setupRoutes(): void {
-    // Health check endpoint для Docker
-    this.app.get('/health', (req: Request, res: Response) => {
-      res.status(200).json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        version: process.env.npm_package_version || '1.0.0'
-      });
-    });
-
     // Главная страница админки
     this.app.get('/admin', (req: Request, res: Response) => {
       res.render('admin');
@@ -101,7 +91,7 @@ export class ApiService {
           // Базовые пары для всех бирж
           const basePairs = [
             'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'XRP/USDT', 'ADA/USDT', 'SOL/USDT',
-            'DOGE/USDT', 'DOT/USDT', 'SHIB/USDT', 'AVAX/USDT', 'LINK/USDT',
+            'DOGE/USDT', 'DOT/USDT', 'MATIC/USDT', 'SHIB/USDT', 'AVAX/USDT', 'LINK/USDT',
             'UNI/USDT', 'LTC/USDT', 'BCH/USDT', 'ATOM/USDT', 'FIL/USDT', 'TRX/USDT',
             'ETC/USDT', 'XMR/USDT', 'ALGO/USDT', 'VET/USDT', 'ICP/USDT', 'THETA/USDT',
             'MANA/USDT', 'SAND/USDT', 'AXS/USDT', 'NEAR/USDT', 'GRT/USDT', 'ENJ/USDT',

@@ -11,13 +11,14 @@ export function loadConfig(): BotConfig {
     
     try {
       const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-        return {
+      
+      return {
         telegramToken: configData.telegramBotToken,
         telegramChatId: configData.telegramChatId,
         selectedExchanges: configData.selectedExchanges || ['bybit'],
         analysisInterval: configData.analysisInterval || '4h',
         analysisPairs: configData.analysisPairs || ['BTC/USDT', 'ETH/USDT'],
-        pythonServiceUrl: process.env.PYTHON_SERVICE_URL || 'http://localhost:8000'
+        pythonServiceUrl: process.env.PYTHON_SERVICE_URL || configData.pythonServiceUrl || 'http://localhost:8000'
       };
     } catch (error) {
       console.error('❌ Ошибка чтения bot-config.json:', error);

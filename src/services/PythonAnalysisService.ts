@@ -4,7 +4,7 @@ import { OHLCVData, PythonAnalysisResult } from '../types';
 export class PythonAnalysisService {
   private baseUrl: string;
 
-  constructor(baseUrl: string = 'http://localhost:8000') {
+  constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 

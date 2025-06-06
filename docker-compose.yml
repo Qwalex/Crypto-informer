@@ -4,14 +4,10 @@ networks:
   crypto-bot-network:
     driver: bridge
 
-volumes:
-  node_modules:
-  dist:
-
 services:
-  # Python Analysis Service
   python-analysis:
     build: ./python-service
+    container_name: crypto-bot-python-analysis
     ports:
       - "8000:8000"
     environment:
@@ -29,12 +25,11 @@ services:
     networks:
       - crypto-bot-network
 
-  # Main Crypto Bot Application (Production)
   crypto-bot:
-    build:
+    build: 
       context: .
       dockerfile: Dockerfile
-      target: production
+    container_name: crypto-bot-main
     ports:
       - "3000:3000"
     environment:
@@ -44,13 +39,15 @@ services:
     depends_on:
       python-analysis:
         condition: service_healthy
+    volumes:
+      - ./bot-config.json:/app/bot-config.json:ro
+      - ./views:/app/views:ro
+      - ./public:/app/public:ro
+    networks:
+      - crypto-bot-network
     healthcheck:
-      test: ["CMD", "node", "-e", "const http = require('http'); http.get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); });"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - crypto-bot-network
-    volumes:
-      - ./bot-config.json:/app/bot-config.json:ro

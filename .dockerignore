@@ -1,70 +1,55 @@
-# Dependencies
+# Игнорируем файлы разработки
 node_modules
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+npm-debug.log
+.npm
+.nyc_output
+coverage
 
-# Build output
-dist
-*.tsbuildinfo
+# Игнорируем Git файлы
+.git
+.gitignore
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Logs
-logs
-*.log
-
-# Temporary folders
-.tmp
-.temp
-
-# IDE
+# Игнорируем IDE файлы
 .vscode
 .idea
 *.swp
 *.swo
-*~
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Игнорируем временные файлы
+tmp
+temp
+.tmp
+.temp
 
-# Docker
+# Игнорируем логи
+logs
+*.log
+
+# Игнорируем environment файлы (будем передавать через docker-compose)
+.env
+.env.local
+.env.development
+.env.production
+
+# Игнорируем dist директорию (будет собрана внутри контейнера)
+dist
+
+# Игнорируем README и документацию
+README.md
+DOCKER.md
+*.md
+
+# Игнорируем Docker файлы при сборке
 Dockerfile*
-docker-compose*
+docker-compose*.yml
 .dockerignore
 
-# Git
-.git
-.gitignore
+# Игнорируем тестовые файлы
+test
+tests
+*.test.js
+*.spec.js
 
-# Documentation
-*.md
-docs/
-
-# Test files
-test/
-tests/
-*.test.*
-*.spec.*
-
-# Environment files
-.env*
-
-# Coverage directory used by tools like istanbul
-coverage/
-.nyc_output
-
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
+# Игнорируем OS файлы
+.DS_Store
+Thumbs.db

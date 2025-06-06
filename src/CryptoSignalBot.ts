@@ -37,7 +37,7 @@ export class CryptoSignalBot {
       this.telegramService
     );
     
-    this.apiService = new ApiService(this.cacheService, 3001);
+    this.apiService = new ApiService(this.cacheService, 3000);
   }
   async start(): Promise<void> {
     console.log('🤖 Запуск криптовалютного сигнального бота...');

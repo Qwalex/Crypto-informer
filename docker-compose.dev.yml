@@ -1,48 +1,51 @@
 version: '3.8'
 
 networks:
-  crypto-bot-dev:
+  crypto-bot-dev-network:
     driver: bridge
 
-volumes:
-  node_modules_dev:
-  
 services:
-  # Python Analysis Service (Development)
-  python-analysis-dev:
+  python-analysis:
     build: ./python-service
+    container_name: crypto-bot-python-analysis-dev
     ports:
       - "8000:8000"
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+    restart: unless-stopped
     volumes:
       - ./python-service:/app
-    command: python app.py
+    command: flask run --host=0.0.0.0 --port=8000 --debug
     networks:
-      - crypto-bot-dev
+      - crypto-bot-dev-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
-  # Main Crypto Bot Application (Development)
-  crypto-bot-dev:
-    build:
+  crypto-bot:
+    build: 
       context: .
       dockerfile: Dockerfile.dev
-      target: development
+    container_name: crypto-bot-main-dev
     ports:
       - "3000:3000"
-      - "9229:9229"  # Debug port
+      - "3003:3003"
     environment:
       - NODE_ENV=development
-      - DEBUG=*
-      - PYTHON_SERVICE_URL=http://python-analysis-dev:8000
+      - PYTHON_SERVICE_URL=http://python-analysis:8000
+    restart: unless-stopped
     depends_on:
-      - python-analysis-dev
-    networks:
-      - crypto-bot-dev
+      python-analysis:
+        condition: service_healthy
     volumes:
       - .:/app
-      - node_modules_dev:/app/node_modules
-      - /app/dist  # Exclude dist from bind mount
-    command: ["npm", "run", "dev"]
+      - /app/node_modules
+      - ./bot-config.json:/app/bot-config.json
+    networks:
+      - crypto-bot-dev-network
     stdin_open: true
     tty: true

@@ -72,6 +72,7 @@ export class TelegramFormatter {
 
     return messages;
   }
+
   private static formatOptimizedHoldSignals(holdSignals: MarketAnalysis[]): string[] {
     const messages: string[] = [];
     
@@ -94,8 +95,11 @@ export class TelegramFormatter {
       const pairCount = group.analyses.length;
       groupText += `📈 <b>Количество пар:</b> ${pairCount}\n\n`;
       
-      // Список ВСЕХ пар в этой группе
-      for (const analysis of group.analyses) {
+      // Список пар (показываем первые 10, остальные суммарно)
+      const maxPairsToShow = 10;
+      const pairsToShow = group.analyses.slice(0, maxPairsToShow);
+      
+      for (const analysis of pairsToShow) {
         const exchangeEmoji = TelegramTemplates.getExchangeEmoji(analysis.exchange);
         groupText += `• <b>${analysis.pair}</b> (${exchangeEmoji}) - $${analysis.currentPrice.toFixed(6)}`;
         
@@ -104,6 +108,12 @@ export class TelegramFormatter {
           groupText += ` - Риск: ${riskEmoji}`;
         }
         groupText += '\n';
+      }
+      
+      // Если пар больше 10, показываем количество оставшихся
+      if (group.analyses.length > maxPairsToShow) {
+        const remaining = group.analyses.length - maxPairsToShow;
+        groupText += `... и еще ${remaining} пар с таким же статусом\n`;
       }
       
       groupText += '\n';
