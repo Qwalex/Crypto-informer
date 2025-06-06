@@ -1,1 +1,0 @@
-console.log('Используйте src/index.ts для запуска бота')
